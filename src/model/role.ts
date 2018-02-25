@@ -1,20 +1,23 @@
-import {action, observable, transaction, useStrict} from "mobx";
-import { IRole } from "./role";
+import { action, observable, transaction, useStrict } from "mobx";
 useStrict(true);
-
-export interface IUserView {
+export interface IRoleView {
     pagination: any
     isLoading: boolean
     isTableLoading: boolean
     updateModalVisible: boolean
     updateModalConfirmLoading: boolean
     initialUpdateValue: any
-    tableData: Array<IUser>
+    tableData: Array<IRole>
     createModalVisible: boolean
     createModalConfirmLoading: boolean
-    tableDataAction(tableData: Array<IUser>, pagination: any, isTableLoading: boolean): void
+    selectedModalVisible: boolean
+    selectedConfirmLoading: boolean
+    selectedData: Array<string>
+    resourceData: Array<IResource>
+    selectRoleId: string
+    tableDataAction(tableData: Array<IRole>, pagination: any, isTableLoading: boolean): void
     tableLoadingAction(isTableLoading: boolean): void
-    oneTableDataAction(tableData: IUser, pagination: any, isTableLoading: boolean): void
+    oneTableDataAction(tableData: IRole, pagination: any, isTableLoading: boolean): void
     notFoundTableDataAction(pagination: any, isTableLoading: boolean): void
     updateModalVisibleAction(is: boolean): void
     updateModalConfirmLoadingAction(is: boolean): void
@@ -23,37 +26,44 @@ export interface IUserView {
     createModalConfirmLoadingAction(is: boolean): void
     createModalAction(isVisible: boolean, isLoad: boolean): void
     loadingAction(isLoad: boolean): void
-    initialUpdateValueAction(data: IUser): void
-
-    selectedModalVisible: boolean
-    selectedConfirmLoading: boolean
-    selectedData: Array<string>
-    selectUserId: string
-    roleData: Array<IRole>
-    selectedModalVisibleAction(is: boolean): void 
-    selectedModalAction(isVisible: boolean, isLoad: boolean): void
-    roleDataAction(data: Array<IRole>): void
+    initialUpdateValueAction(data: IRole): void
+    selectedModalVisibleAction(is: boolean): void
     selectedModalConfirmLoadingAction(is: boolean): void
-    selectedDataAction(data: Array<string>): void 
-    selectedUserIdAction(id: string): void
-    
+    selectedModalAction(isVisible: boolean, isLoad: boolean): void
+    resourceDataAction(data: Array<IResource>): void
+    selectedDataAction(data: Array<string>): void
+    selectedRoleIdAction(id: string): void
+    oneResourceDataAction(tableData: IResource, isTableLoading: boolean): void
+    notFoundResourceDataAction(isTableLoading: boolean): void
 }
 
 
-export declare type  IUser = {
+export declare type IRole = {
     Id?: string,
-    Account?: string,
+    Code?: string,
     Name?: string,
-    UserType?: number,
+    Description?: string,
     DeleteStatus?: number,
     Created?: string,
     Updated?: string,
-    Password?: string,
     Locked?: number
 
 }
 
-class User {
+export declare type IResource = {
+    Id?: string,
+    Code?: string,
+    Name?: string,
+    ResType?: number,
+    IsOpen?: number,
+    DeleteStatus?: number,
+    Created?: string,
+    Updated?: string,
+    Locked?: number
+
+}
+
+class Role {
 
     @observable isLoading: boolean = false;
     @observable isTableLoading: boolean = false;
@@ -65,26 +75,26 @@ class User {
         current: 1
     };
 
-    @observable tableData: Array<IUser>;
+    @observable tableData: Array<IRole>;
     // update modal
     @observable updateModalVisible: boolean = false;
     @observable updateModalConfirmLoading: boolean = false;
-    @observable initialUpdateValue: IUser;
-    @observable createModalVisible: boolean = false;
-    @observable createModalConfirmLoading: boolean = false;
-
+    @observable initialUpdateValue: IRole;
     @observable selectedModalVisible: boolean = false;
     @observable selectedConfirmLoading: boolean = false;
     @observable selectedData: Array<string>;
-    @observable selectUserId: string;
-    @observable roleData: Array<IRole>;
+    @observable selectRoleId: string;
+    @observable resourceData: Array<IResource>;
+    @observable createModalVisible: boolean = false;
+    @observable createModalConfirmLoading: boolean = false;
+
 
     @action tableLoadingAction(isTableLoading: boolean): void {
         this.isTableLoading = isTableLoading;
 
     }
 
-    @action tableDataAction(tableData: Array<IUser>, pagination: any, isTableLoading: boolean): void {
+    @action tableDataAction(tableData: Array<IRole>, pagination: any, isTableLoading: boolean): void {
         transaction(() => {
             this.tableData = tableData;
             this.pagination = pagination;
@@ -93,7 +103,7 @@ class User {
 
     }
 
-    @action oneTableDataAction(tableData: IUser, pagination: any, isTableLoading: boolean): void {
+    @action oneTableDataAction(tableData: IRole, pagination: any, isTableLoading: boolean): void {
         transaction(() => {
             this.tableData = [];
             this.tableData.push(tableData);
@@ -107,6 +117,23 @@ class User {
         transaction(() => {
             this.tableData = [];
             this.pagination = pagination;
+            this.isTableLoading = isTableLoading;
+        });
+
+    }
+
+    @action oneResourceDataAction(tableData: IResource, isTableLoading: boolean): void {
+        transaction(() => {
+            this.resourceData = [];
+            this.resourceData.push(tableData);
+            this.isTableLoading = isTableLoading;
+        });
+
+    }
+
+    @action notFoundResourceDataAction(isTableLoading: boolean): void {
+        transaction(() => {
+            this.resourceData = [];
             this.isTableLoading = isTableLoading;
         });
 
@@ -146,16 +173,6 @@ class User {
         });
     }
 
-
-    @action loadingAction(isLoad: boolean): void {
-        this.isLoading = isLoad;
-    }
-
-    @action initialUpdateValueAction(data: IUser): void {
-        this.initialUpdateValue = data;
-
-    }
-
     @action selectedModalVisibleAction(is: boolean): void {
         this.selectedModalVisible = is;
 
@@ -173,18 +190,28 @@ class User {
         });
     }
 
-    @action roleDataAction(data: Array<IRole>): void {
-        this.roleData = data;
+    @action loadingAction(isLoad: boolean): void {
+        this.isLoading = isLoad;
+    }
+
+    @action initialUpdateValueAction(data: IRole): void {
+        this.initialUpdateValue = data;
+
+    }
+
+    @action resourceDataAction(data: Array<IResource>): void {
+        this.resourceData = data;
     }
 
     @action selectedDataAction(data: Array<string>): void {
         this.selectedData = data;
     }
 
-    @action selectedUserIdAction(id: string): void {
-        this.selectUserId = id;
+    @action selectedRoleIdAction(id: string): void {
+        this.selectRoleId = id;
     }
+
 
 }
 
-export  default new User();
+export default new Role();

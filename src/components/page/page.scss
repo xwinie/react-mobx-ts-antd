@@ -1,0 +1,33 @@
+.admin-framework-page {
+    position: relative;
+    background:#fff;
+
+    .page-content {
+        position: relative;
+        overflow: auto;
+    }
+}
+
+
+.admin-table-action {
+    padding: 12px 6px;
+    background: #f8f8f8;
+    border-radius: 6px;
+    margin-bottom: 8px;
+}
+
+.admin-table-action > .ant-row {
+    position: relative;
+}
+
+.admin-table-action .ant-form-item {
+    margin-bottom: 12px;
+}
+
+.admin-table-action .ant-btn + .ant-btn {
+    margin-left: 8px;
+}
+
+.highlight {
+    background-color: #ecf6fd;
+}

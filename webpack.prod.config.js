@@ -4,12 +4,23 @@ var HtmlWebpackPlugin=require('html-webpack-plugin');
 var CompressionWebpackPlugin = require('compression-webpack-plugin');
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
 const tsImportPluginFactory = require('ts-import-plugin')
-var APP_PATH = path.resolve(__dirname, 'app');
+var APP_PATH = path.resolve(__dirname, 'dist');
 var SRC_PATH = path.resolve(__dirname, 'src');
 module.exports={
+    resolve: {
+        extensions: ['', '.js', '.jsx'],
+        unsafeCache: true,
+        alias: {
+            __module: path.join(__dirname, 'src', 'module'),
+            __public: path.join(__dirname, 'src', 'public'),
+            __res: path.join(__dirname, 'src', 'res'),
+            __config: path.join(__dirname, 'src', 'config'),
+            __utils: path.join(__dirname, 'src', 'utils')
+        }
+    },
 	entry:['./src/App.tsx'],
 	output:{
-		path:path.resolve(__dirname,'app'),
+		path:path.resolve(__dirname,'dist'),
 		// publicPath:'./',
 		filename:'[name].js'
 	},
@@ -29,6 +40,10 @@ module.exports={
 				test:/\.css$/,
 				loader:'style-loader!css-loader'
 			},
+            {
+                test: /\.scss$/,
+                loader: 'style-loader!css-loader!sass-loader',
+            },
 			{
 				test:/\.(jpg|png|gif|svg)$/,
 				loader:'url-loader',

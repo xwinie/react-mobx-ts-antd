@@ -8,45 +8,32 @@ import Page from "../../components/page/Page";
 import { ColumnProps } from "antd/lib/table";
 import api from "../../model/api";
 import { IAuth } from "../../model/auth";
-import { IUser, IUserView } from "../../model/user";
+import { IResource, IRole, IRoleView } from "../../model/role";
 import UpdateModal from "./UpdateModal";
-import CreateModal from './CreateModal'
-import SelectRoleModal from './SelectRoleModal'
-import { IRole } from "../../model/role";
+import CreateModal from "./CreateModal";
+import SelectResourceModal from "./SelectResourceModal";
 const Search = Input.Search;
 
 
-interface UserProps {
+interface RoleProps {
     auth?: IAuth
-    user?: IUserView
+    role?: IRoleView
 }
 
 
-class UserTable extends Table<IUser> {
+class UserTable extends Table<IRole> {
 }
 
-@inject('auth', 'user')
+@inject('auth', 'role')
 @observer
-class User extends React.Component<UserProps, any> {
+class Role extends React.Component<RoleProps, any> {
 
     state = {
         columns: [
             { title: 'Id', dataIndex: 'Id', key: '1' },
-            { title: '账号', dataIndex: 'Account', key: '2', fixed: 'left', width: 150 },
-            { title: '姓名', dataIndex: 'Name', key: '3', fixed: 'left', width: 170 },
-            {
-                title: '用户类型', dataIndex: 'UserType', key: '4',
-                render: text => {
-                    if (text == 0) {
-                        return <span>第三方用户</span>;
-                    } else if (text == 1) {
-                        return <span>后端管理用户</span>;
-                    }
-                    else {
-                        return <span>未知</span>;
-                    }
-                }
-            },
+            { title: '角色编码', dataIndex: 'Code', key: '2', fixed: 'left', width: 150 },
+            { title: '角色名称', dataIndex: 'Name', key: '3', fixed: 'left', width: 170 },
+            { title: '角色描述', dataIndex: 'Description', key: '4' },
             {
                 title: '是否删除', dataIndex: 'DeleteStatus', key: '5',
                 render: text => {
@@ -87,10 +74,10 @@ class User extends React.Component<UserProps, any> {
                 fixed: 'right',
                 dataIndex: '',
                 width: 200,
-                render: (text: string, record: IUser) => {
+                render: (text: string, record: IRole) => {
                     return [
                         <Row key="operationAction">
-                            <Col span={7} style={{ textAlign: 'left' }}>
+                            <Col span={7} style={{ textAlign: 'center' }}>
                                 <Popconfirm
                                     title="确定删除?"
                                     placement="topRight"
@@ -104,23 +91,23 @@ class User extends React.Component<UserProps, any> {
                                 <a onClick={this.showUpdateModal.bind(this, record)}> <Icon type="edit" />修改</a>
                             </Col>
                             <Col span={9} style={{ textAlign: 'right' }}>
-                                <a onClick={this.showSelectModal.bind(this, record)}><Icon type="select" />角色</a>
+                                <a onClick={this.showSelectModal.bind(this, record)}><Icon type="select" />资源</a>
                             </Col>
                         </Row>
 
                     ]
                 }
-            }] as ColumnProps<IUser>[]
+            }] as ColumnProps<IRole>[]
     };
 
     // 初始化数据
     componentDidMount() {
-        const user = this.props.user as IUserView;
+        const role = this.props.role as IRoleView;
         this.getTableData({
-            perPage: user.pagination.pageSize,
-            p: user.pagination.current,
+            perPage: role.pagination.pageSize,
+            p: role.pagination.current,
         })
-        this.getRoleData()
+        this.getResourceData()
     }
 
     FormDate(text: any) {
@@ -129,157 +116,156 @@ class User extends React.Component<UserProps, any> {
 
     getTableData(params: any) {
         const iAuth = this.props.auth as IAuth;
-        const user = this.props.user as IUserView;
-
-        user.tableLoadingAction(true);
-        api.getUsers(iAuth.ValidToken, params).then((res) => {
-            const pagination = user.pagination;
+        const role = this.props.role as IRoleView;
+        role.tableLoadingAction(true);
+        api.getRoles(iAuth.ValidToken, params).then((res) => {
+            const pagination = role.pagination;
             // 读取数据总条数
             pagination.total = res.data.Total;
-            user.tableDataAction(res.data.Users as Array<IUser>, pagination, false);
+            role.tableDataAction(res.data.Roles as Array<IRole>, pagination, false);
         });
 
     }
 
-    getRoleData() {
+    getResourceData() {
         const iAuth = this.props.auth as IAuth;
-        const user = this.props.user as IUserView;
-        api.getRoles(iAuth.ValidToken, { "perPage": 100000, "p": 1 }).then((res) => {
-            user.roleDataAction(res.data.Roles);
+        const role = this.props.role as IRoleView;
+        api.getResourceAll(iAuth.ValidToken).then((res) => {
+            role.resourceDataAction(res.data.Resources);
         }).catch((error: any) => {
             message.error(error.toString());
         });
 
     }
+
     // 关键词搜索
     handleSearch(value: string) {
         const iAuth = this.props.auth as IAuth;
-        const user = this.props.user as IUserView;
-        const pager = user.pagination;
+        const role = this.props.role as IRoleView;
+        const pager = role.pagination;
         if (value == "") {
             this.getTableData({
-                perPage: pager.pageSize,
+                perPage: role.pagination.pageSize,
                 p: 1,
-            });
-        }
-        else {
+            })
+        } else {
 
-            user.tableLoadingAction(true);
+            role.tableLoadingAction(true);
 
-            api.getUserByAccount(iAuth.token, value).then((res) => {
+            api.getRoleByCode(iAuth.token, value).then((res) => {
 
                 // 读取数据总条数
                 pager.total = res.data.length;
 
-                user.oneTableDataAction(res.data, pager, false);
+                role.oneTableDataAction(res.data, pager, false);
 
             }).catch((error: any) => {
                 // 读取数据总条数
                 pager.total = 0;
-                user.notFoundTableDataAction(pager, false);
+                role.notFoundTableDataAction(pager, false);
             });
         }
-    }
+    };
 
     //显示
-    showUpdateModal = (data: IUser) => {
-        const user = this.props.user as IUserView;
-        user.loadingAction(true);
+    showUpdateModal = (data: IRole) => {
+        const role = this.props.role as IRoleView;
+        role.loadingAction(true);
         transaction(() => {
-            user.loadingAction(false);
-            user.updateModalVisibleAction(true);
-            user.initialUpdateValueAction(data);
+            role.loadingAction(false);
+            role.updateModalVisibleAction(true);
+            role.initialUpdateValueAction(data);
         });
     };
 
     //更新相关 UpdateModal
     handleUpdateModalCancel() {
-        const user = this.props.user as IUserView;
-        user.updateModalVisibleAction(false);
+        const role = this.props.role as IRoleView;
+        role.updateModalVisibleAction(false);
     }
 
-    handleUpdateModalOk(data: IUser) {
-        const user = this.props.user as IUserView;
+    handleUpdateModalOk(data: IRole) {
+        const role = this.props.role as IRoleView;
         const iAuth = this.props.auth as IAuth;
-        user.updateModalConfirmLoadingAction(true);
+        role.updateModalConfirmLoadingAction(true);
 
-        let d: IUser = {};
+        let d: IRole = {};
         d.Name = data.Name;
-        d.UserType = data.UserType ? 0 : 1 as number;
+        d.Description = data.Description;
         d.Locked = data.Locked ? 0 : 1 as number;
 
-        api.updateUser(iAuth.ValidToken, data.Id as string, d).then((res) => {
-            user.updateModalAction(false, false);
+        api.updateRole(iAuth.ValidToken, data.Id+'', d).then((res) => {
+            role.updateModalAction(false, false);
             message.success('修改成功');
             this.getTableData({
-                perPage: user.pagination.pageSize,
-                p: user.pagination.current,
+                perPage: role.pagination.pageSize,
+                p: role.pagination.current,
             })
         }).catch((error: any) => {
-            user.updateModalConfirmLoadingAction(false);
+            role.updateModalConfirmLoadingAction(false);
             message.error(error.toString());
         });
     }
 
     // open create modal
     showCreateModal = () => {
-        const user = this.props.user as IUserView;
-        user.createModalVisibleAction(true);
+        const role = this.props.role as IRoleView;
+        role.createModalVisibleAction(true);
 
     };
 
     //新建相关 CreateModal
     handleCreateModalCancel() {
-        const user = this.props.user as IUserView;
-        user.createModalVisibleAction(false);
+        const role = this.props.role as IRoleView;
+        role.createModalVisibleAction(false);
     }
 
-    handleCreateModalOk(data: IUser) {
-        const user = this.props.user as IUserView;
+    handleCreateModalOk(data: IRole) {
+        const role = this.props.role as IRoleView;
         const iAuth = this.props.auth as IAuth;
-        user.createModalConfirmLoadingAction(true);
+        role.createModalConfirmLoadingAction(true);
 
-        let d: IUser = {};
-        d.Account = data.Account;
+        // console.log('create data:', data);
+        let d: IRole = {};
+        d.Code = data.Code;
+        d.Description = data.Description;
         d.Name = data.Name;
-        d.UserType = data.UserType ? 0 : 1 as number;
-        d.Password = api.encryptionPassword(data.Account as string, data.Password as string);
 
-        api.createUser(iAuth.ValidToken, d).then((res) => {
-            user.createModalAction(false, false);
+        api.createRole(iAuth.ValidToken, d).then((res) => {
+            role.updateModalAction(false, false);
             message.success('创建成功');
             this.getTableData({
-                perPage: user.pagination.pageSize,
-                p: user.pagination.current,
+                perPage: role.pagination.pageSize,
+                p: role.pagination.current,
             })
         }).catch((error: any) => {
-            user.createModalConfirmLoadingAction(false);
+            role.updateModalConfirmLoadingAction(false);
             message.error(error.toString());
         });
 
-        user.createModalAction(false, false);
+        role.createModalAction(false, false);
 
     }
 
-
     //显示
-    showSelectModal = (data: IUser) => {
-        const user = this.props.user as IUserView;
+    showSelectModal = (data: IRole) => {
+        const role = this.props.role as IRoleView;
         const iAuth = this.props.auth as IAuth;
-        user.loadingAction(true);
-        api.getRoleByUserId(iAuth.ValidToken, data.Id as string).then((res1) => {
+        role.loadingAction(true);
+
+        api.getResourceByRoleId(iAuth.ValidToken, data.Id as string).then((res1) => {
             transaction(() => {
                 let selectedKeyArray: Array<string> = [];
-                if (res1.data.Roles) {
-                    res1.data.Roles.map((value: IRole) => {
-                        selectedKeyArray.push(value.Id + '');
+                if (res1.data.Resources) {
+                    res1.data.Resources.map((value: IResource) => {
+                        selectedKeyArray.push(value.Id as string);
                     });
                 }
-                user.selectedDataAction(selectedKeyArray);
-                user.loadingAction(false);
-                user.selectedModalVisibleAction(true);
-                user.selectedModalConfirmLoadingAction(false);
-                user.selectedUserIdAction(data.Id as string);
+                role.selectedDataAction(selectedKeyArray);
+                role.loadingAction(false);
+                role.selectedModalVisibleAction(true);
+                role.selectedModalConfirmLoadingAction(false);
+                role.selectedRoleIdAction(data.Id as string);
             }
             );
         }).catch((error: any) => {
@@ -290,55 +276,69 @@ class User extends React.Component<UserProps, any> {
     };
     //分配权限
     handleSelectModalCancel() {
-        const user = this.props.user as IUserView;
-        user.selectedModalVisibleAction(false);
+        const role = this.props.role as IRoleView;
+        role.selectedModalVisibleAction(false);
     }
 
     handleSelectModalOk(data: Array<string>) {
-        // console.log(111, data);
-        const user = this.props.user as IUserView;
-        user.selectedModalConfirmLoadingAction(true);
+        const role = this.props.role as IRoleView;
+        role.selectedModalConfirmLoadingAction(true);
         const iAuth = this.props.auth as IAuth;
-        api.userDistributorRole(iAuth.ValidToken, user.selectUserId as string, data).then((res) => {
-            user.selectedModalAction(false, false);
+        api.roleDistributorResource(iAuth.ValidToken, role.selectRoleId as string, data).then((res) => {
+            role.selectedModalAction(false, false);
             message.success('分配成功');
             this.getTableData({
-                perPage: user.pagination.pageSize,
-                p: user.pagination.current,
+                perPage: role.pagination.pageSize,
+                p: role.pagination.current,
             })
         }).catch((error: any) => {
-            user.selectedModalConfirmLoadingAction(false);
+            role.selectedModalConfirmLoadingAction(false);
             message.error(error.toString());
         });
 
     }
 
     handleSelectChange(data: Array<string>) {
-        const user = this.props.user as IUserView;
-        user.selectedDataAction(data);
+        const role = this.props.role as IRoleView;
+        role.selectedDataAction(data);
     }
 
-
     // 删除数据项
-    deleteItem(record: IUser) {
-        const user = this.props.user as IUserView;
+    deleteItem(record: IRole) {
+        const role = this.props.role as IRoleView;
         const iAuth = this.props.auth as IAuth;
-        user.tableLoadingAction(true);
+        role.tableLoadingAction(true);
 
-        api.deleteUser(iAuth.ValidToken, record.Id as string).then((res) => {
+        api.deleteRole(iAuth.ValidToken, record.Id+'').then((res) => {
             message.success('删除成功');
             this.getTableData({
-                perPage: user.pagination.pageSize,
-                p: user.pagination.current,
+                perPage: role.pagination.pageSize,
+                p: role.pagination.current,
             })
         }).catch((error: any) => {
             message.error(error.toString());
         });
-        user.tableLoadingAction(false);
+        role.tableLoadingAction(false);
     }
+
+    // 选择关键词搜索
+    handleSelectSearch(value: string) {
+        const iAuth = this.props.auth as IAuth;
+        const role = this.props.role as IRoleView;
+        if (value != "") {
+            api.getResourceByCode(iAuth.token, value).then((res) => {
+                role.oneResourceDataAction(res.data, false);
+
+            }).catch((error: any) => {
+                role.notFoundResourceDataAction(false)
+
+            });
+        }
+    };
 
 
     renderTableActionSimple() {
+
         return (
             <Form
                 className="admin-table-action"
@@ -361,37 +361,38 @@ class User extends React.Component<UserProps, any> {
     }
 
     render() {
-        const user = this.props.user as IUserView;
+        const role = this.props.role as IRoleView;
         return (
 
-            <Page title="用户管理" loading={user.isLoading}>
+            <Page title="角色管理" loading={role.isLoading}>
                 {
                     this.renderTableActionSimple()
                 }
-                <UserTable rowKey={(record: IUser) => record.Account as string} columns={this.state.columns}
-                    dataSource={toJS(user.tableData)}
+                <UserTable rowKey={(record: IRole) => record.Code as string} columns={this.state.columns}
+                    dataSource={toJS(role.tableData)}
                     scroll={{ x: 1400 }}
                     size="middle"
-                    pagination={user.pagination} loading={user.isTableLoading} />
+                    pagination={role.pagination} loading={role.isTableLoading} />
                 <UpdateModal
-                    initialValue={user.initialUpdateValue}
-                    visible={user.updateModalVisible}
-                    confirmLoading={user.updateModalConfirmLoading}
+                    initialValue={role.initialUpdateValue}
+                    visible={role.updateModalVisible}
+                    confirmLoading={role.updateModalConfirmLoading}
                     onCancel={this.handleUpdateModalCancel.bind(this)}
                     onOk={this.handleUpdateModalOk.bind(this)}
                 />
                 <CreateModal
-                    visible={user.createModalVisible}
-                    confirmLoading={user.createModalConfirmLoading}
+                    visible={role.createModalVisible}
+                    confirmLoading={role.createModalConfirmLoading}
                     onCancel={this.handleCreateModalCancel.bind(this)}
                     onOk={this.handleCreateModalOk.bind(this)}
                 />
-                <SelectRoleModal
-                    roleData={user.roleData}
-                    selectedData={user.selectedData}
-                    visible={user.selectedModalVisible}
-                    confirmLoading={user.selectedConfirmLoading}
+                <SelectResourceModal
+                    resourceData={role.resourceData}
+                    selectedData={role.selectedData}
+                    visible={role.selectedModalVisible}
+                    confirmLoading={role.selectedConfirmLoading}
                     onSelectChange={this.handleSelectChange.bind(this)}
+                    onSelectSearch={this.handleSelectSearch.bind(this)}
                     onCancel={this.handleSelectModalCancel.bind(this)}
                     onOk={this.handleSelectModalOk.bind(this)}
                 />
@@ -401,4 +402,4 @@ class User extends React.Component<UserProps, any> {
     }
 }
 
-export default User;
+export default Role;
